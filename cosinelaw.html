@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>餘弦公式視覺化證明</title>
+  
+  <!-- 引入 Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- 引入 React 與 ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- 引入 Babel 讓瀏覽器可以直接解析 JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-slate-50">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    // 內建 SVG 圖示
+    const InfoIcon = ({ className }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+    );
+    const ChevronLeftIcon = ({ className }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6"/></svg>
+    );
+    const ChevronRightIcon = ({ className }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>
+    );
+    const RotateCcwIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+    );
+
+    const App = () => {
+      const [a, setA] = useState(12);
+      const [b, setB] = useState(10);
+      const [angleC, setAngleC] = useState(60);
+      const [step, setStep] = useState(0);
+
+      const rad = (angleC * Math.PI) / 180;
+      const scale = 20;
+      const originX = 250;
+      const originY = 320;
+
+      const C = { x: originX, y: originY };
+      const B = { x: originX + a * scale, y: originY };
+      const A = { 
+        x: originX + b * scale * Math.cos(rad), 
+        y: originY - b * scale * Math.sin(rad) 
+      };
+      const D = { x: A.x, y: originY };
+
+      const cValue = Math.sqrt(a * a + b * b - 2 * a * b * Math.cos(rad));
+      
+      const drawAngleArc = (radius) => {
+        const endX = originX + radius * Math.cos(rad);
+        const endY = originY - radius * Math.sin(rad);
+        return `M ${originX + radius} ${originY} A ${radius} ${radius} 0 0 0 ${endX} ${endY}`;
+      };
+
+      const steps = [
+        {
+          title: "1. 初始三角形 ABC",
+          desc: "給定一個任意 $\\triangle ABC$，已知兩邊 $a$、$b$ 以及其夾角 $C$。我們的目標是求出對邊 $c$ 的長度。",
+          math: "目標：推導出 c² = a² + b² - 2ab·cos(C)"
+        },
+        {
+          title: "2. 作高 (垂線)",
+          desc: "從頂點 A 向底邊 BC（或其延長線）作垂線，垂足記為 D。這樣就產生了兩個直角三角形：$\\triangle ADC$ 與 $\\triangle ADB$。",
+          math: "建立高度 h"
+        },
+        {
+          title: "3. 分析直角三角形 ADC",
+          desc: "在直角 $\\triangle ADC$ 中，利用三角函數可以表示出高 $h$ 以及底邊片段 $CD$。注意：若 $C$ 為鈍角，$\\cos(C)$ 為負值，$D$ 點會落在 $C$ 點的左側。",
+          math: "h = b·sin(C)\nCD = b·cos(C)"
+        },
+        {
+          title: "4. 分析直角三角形 ADB",
+          desc: "接著觀察右側的直角 $\\triangle ADB$。其底邊 $DB$ 的長度可以表示為總長 $a$ 減去片段 $CD$。高依然是 $h$。",
+          math: "DB = a - CD\nDB = a - b·cos(C)"
+        },
+        {
+          title: "5. 應用畢氏定理",
+          desc: "在直角 $\\triangle ADB$ 中，對邊 $c$ 正好是斜邊。根據畢氏定理（勾股定理），斜邊的平方等於兩股平方和。",
+          math: "c² = h² + DB²\nc² = (b·sin(C))² + (a - b·cos(C))²"
+        },
+        {
+          title: "6. 展開與化簡",
+          desc: "將公式展開，並利用三角恆等式 $\\sin^2(C) + \\cos^2(C) = 1$ 進行合併，即可得到最終的餘弦定理公式！",
+          math: "c² = b²sin²(C) + a² - 2ab·cos(C) + b²cos²(C)\nc² = a² + b²(sin²(C) + cos²(C)) - 2ab·cos(C)\nc² = a² + b² - 2ab·cos(C)"
+        }
+      ];
+
+      const fmt = (num) => num.toFixed(2);
+
+      return (
+        <div className="min-h-screen bg-slate-50 text-slate-800 p-4 md:p-8 font-sans">
+          <div className="max-w-6xl mx-auto space-y-6">
+            
+            <header className="text-center space-y-2">
+              <h1 className="text-3xl md:text-4xl font-bold text-slate-900">餘弦定理 (Law of Cosines) 視覺化證明</h1>
+              <p className="text-slate-600">透過互動圖形與步驟拆解，直觀理解公式的幾何意義</p>
+            </header>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              
+              <div className="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                <div className="p-4 bg-slate-100 border-b border-slate-200 flex justify-between items-center">
+                  <span className="font-semibold text-slate-700 flex items-center gap-2">
+                    <InfoIcon className="text-blue-500" />
+                    互動幾何圖形
+                  </span>
+                  <span className="text-sm text-slate-500">拖曳右側滑桿可改變圖形</span>
+                </div>
+                
+                <div className="flex-1 min-h-[400px] relative w-full flex items-center justify-center p-4">
+                  <svg viewBox="0 0 600 450" className="w-full h-full max-w-full overflow-visible">
+                    <defs>
+                      <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+                      </marker>
+                    </defs>
+
+                    <line x1="50" y1={originY} x2="550" y2={originY} stroke="#e2e8f0" strokeWidth="2" />
+                    
+                    {step >= 1 && (
+                      <g className="transition-opacity duration-500">
+                        <polyline 
+                          points={`${D.x},${D.y - 15} ${D.x + (angleC > 90 ? -15 : 15)},${D.y - 15} ${D.x + (angleC > 90 ? -15 : 15)},${D.y}`}
+                          fill="none" stroke="#94a3b8" strokeWidth="1.5"
+                        />
+                        <line 
+                          x1={A.x} y1={A.y} x2={D.x} y2={D.y} 
+                          stroke="#a855f7" strokeWidth="3" strokeDasharray="6,4"
+                          className={step === 2 || step === 4 ? "opacity-100" : "opacity-40"}
+                        />
+                        <text x={A.x + 10} y={(A.y + D.y) / 2} fill="#a855f7" fontSize="16" fontWeight="bold">h</text>
+                        
+                        <circle cx={D.x} cy={D.y} r="4" fill="#64748b" />
+                        <text x={D.x} y={D.y + 25} textAnchor="middle" fill="#64748b" fontSize="16" fontWeight="bold">D</text>
+                      </g>
+                    )}
+
+                    <line x1={C.x} y1={C.y} x2={B.x} y2={B.y} stroke="#3b82f6" strokeWidth={step >= 3 ? "2" : "4"} className="transition-all" />
+                    <line x1={C.x} y1={C.y} x2={A.x} y2={A.y} stroke="#22c55e" strokeWidth={step === 2 || step === 0 ? "4" : "2"} className="transition-all" />
+                    <line x1={A.x} y1={A.y} x2={B.x} y2={B.y} stroke="#ef4444" strokeWidth={step >= 4 || step === 0 ? "4" : "2"} className="transition-all" />
+
+                    {step === 2 && (
+                      <g>
+                        <line x1={C.x} y1={C.y + 5} x2={D.x} y2={D.y + 5} stroke="#f59e0b" strokeWidth="4" />
+                        <text x={(C.x + D.x) / 2} y={C.y - 10} textAnchor="middle" fill="#f59e0b" fontSize="14" fontWeight="bold">b·cos(C)</text>
+                      </g>
+                    )}
+
+                    {step >= 3 && step <= 5 && (
+                      <g>
+                        <line x1={D.x} y1={D.y + 5} x2={B.x} y2={B.y + 5} stroke="#ec4899" strokeWidth="4" />
+                        <text x={(D.x + B.x) / 2} y={D.y + 25} textAnchor="middle" fill="#ec4899" fontSize="14" fontWeight="bold">
+                          {angleC > 90 ? "a - (-|b·cos(C)|)" : "a - b·cos(C)"}
+                        </text>
+                      </g>
+                    )}
+
+                    <path d={drawAngleArc(30)} fill="none" stroke="#f59e0b" strokeWidth="2" />
+                    <text 
+                      x={originX + 45 * Math.cos(rad/2)} 
+                      y={originY - 45 * Math.sin(rad/2) + 5} 
+                      fill="#f59e0b" fontSize="16" fontWeight="bold" textAnchor="middle"
+                    >
+                      {angleC}°
+                    </text>
+
+                    <circle cx={C.x} cy={C.y} r="6" fill="#1e293b" />
+                    <text x={C.x - 15} y={C.y + 20} fill="#1e293b" fontSize="20" fontWeight="bold">C</text>
+
+                    <circle cx={B.x} cy={B.y} r="6" fill="#1e293b" />
+                    <text x={B.x + 10} y={B.y + 20} fill="#1e293b" fontSize="20" fontWeight="bold">B</text>
+
+                    <circle cx={A.x} cy={A.y} r="6" fill="#1e293b" />
+                    <text x={A.x} y={A.y - 15} textAnchor="middle" fill="#1e293b" fontSize="20" fontWeight="bold">A</text>
+
+                    <text x={(C.x + B.x) / 2} y={C.y + (step === 0 || step === 5 ? 25 : 45)} textAnchor="middle" fill="#3b82f6" fontSize="18" fontWeight="bold">
+                      a = {a}
+                    </text>
+                    <text x={(C.x + A.x) / 2 - 20} y={(C.y + A.y) / 2 - 10} fill="#22c55e" fontSize="18" fontWeight="bold">
+                      b = {b}
+                    </text>
+                    <text x={(A.x + B.x) / 2 + 15} y={(A.y + B.y) / 2 - 10} fill="#ef4444" fontSize="18" fontWeight="bold">
+                      c ≈ {fmt(cValue)}
+                    </text>
+
+                  </svg>
+                </div>
+                
+                <div className="bg-slate-800 text-slate-100 p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm">
+                  <div>
+                    <div className="text-slate-400">邊 a (BC)</div>
+                    <div className="font-mono text-lg text-blue-400">{a.toFixed(1)}</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-400">邊 b (AC)</div>
+                    <div className="font-mono text-lg text-green-400">{b.toFixed(1)}</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-400">夾角 C</div>
+                    <div className="font-mono text-lg text-amber-400">{angleC}°</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-400">邊 c (AB)</div>
+                    <div className="font-mono text-lg text-red-400">{fmt(cValue)}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-5 flex flex-col gap-6">
+                
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+                  <h2 className="text-xl font-bold text-slate-800 border-b pb-2">參數設定</h2>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <label className="text-sm font-medium text-slate-700">底邊 a (藍色)</label>
+                        <span className="text-sm text-blue-600 font-mono">{a}</span>
+                      </div>
+                      <input 
+                        type="range" min="5" max="20" step="0.5" 
+                        value={a} onChange={(e) => setA(parseFloat(e.target.value))}
+                        className="w-full accent-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <label className="text-sm font-medium text-slate-700">側邊 b (綠色)</label>
+                        <span className="text-sm text-green-600 font-mono">{b}</span>
+                      </div>
+                      <input 
+                        type="range" min="5" max="20" step="0.5" 
+                        value={b} onChange={(e) => setB(parseFloat(e.target.value))}
+                        className="w-full accent-green-500"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <label className="text-sm font-medium text-slate-700">夾角 C (橘色)</label>
+                        <span className="text-sm text-amber-600 font-mono">{angleC}°</span>
+                      </div>
+                      <input 
+                        type="range" min="30" max="150" step="1" 
+                        value={angleC} onChange={(e) => setAngleC(parseInt(e.target.value))}
+                        className="w-full accent-amber-500"
+                      />
+                      <div className="flex justify-between text-xs text-slate-400 mt-1">
+                        <span>銳角</span>
+                        <span>直角</span>
+                        <span>鈍角</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex-1 flex flex-col">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-bold text-slate-800">證明步驟</h2>
+                    <span className="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">
+                      Step {step + 1} / {steps.length}
+                    </span>
+                  </div>
+                  
+                  <div className="flex-1 bg-slate-50 rounded-xl p-5 border border-slate-100 mb-6">
+                    <h3 className="font-bold text-lg text-slate-800 mb-2">{steps[step].title}</h3>
+                    <p className="text-slate-600 leading-relaxed mb-4">
+                      {steps[step].desc.split('$').map((text, i) => 
+                        i % 2 === 1 ? <span key={i} className="font-mono text-indigo-600 font-semibold">{text}</span> : text
+                      )}
+                    </p>
+                    <div className="bg-slate-800 text-emerald-300 font-mono p-4 rounded-lg text-sm whitespace-pre-wrap leading-loose overflow-x-auto">
+                      {steps[step].math}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between mt-auto">
+                    <button 
+                      onClick={() => setStep(Math.max(0, step - 1))}
+                      disabled={step === 0}
+                      className="flex items-center px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronLeftIcon className="mr-1" /> 上一步
+                    </button>
+                    
+                    <button 
+                      onClick={() => setStep(0)}
+                      className="p-2 text-slate-400 hover:text-slate-700 transition-colors"
+                      title="重新開始"
+                    >
+                      <RotateCcwIcon />
+                    </button>
+
+                    <button 
+                      onClick={() => setStep(Math.min(steps.length - 1, step + 1))}
+                      disabled={step === steps.length - 1}
+                      className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    >
+                      下一步 <ChevronRightIcon className="ml-1" />
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
