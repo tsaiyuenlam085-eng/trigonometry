@@ -126,18 +126,62 @@
                 </div>
             </a>
 
-            <!-- 卡片 3：未來擴充預留 (餘弦定理等) -->
-            <div class="bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300 overflow-hidden h-full flex flex-col justify-center items-center text-center p-8 opacity-75">
+            <!-- 卡片 3：餘弦定理 -->
+            <a href="cosinelaw.html" class="block group">
+                <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden card-hover h-full flex flex-col">
+                    <!-- 裝飾性圖片區：使用紫色系 -->
+                    <div class="h-48 bg-gradient-to-br from-purple-50 to-fuchsia-100 flex items-center justify-center relative overflow-hidden">
+                        <svg class="absolute opacity-20 w-64 h-64 -right-10 -bottom-10 text-purple-500" viewBox="0 0 100 100" fill="currentColor">
+                             <!-- 餘弦定理相關的幾何裝飾圖形：直角三角形和正方形示意 -->
+                            <path d="M10,90 L90,90 L90,10 Z" />
+                        </svg>
+                        <div class="relative bg-white p-4 rounded-xl shadow-sm border border-purple-100 group-hover:scale-110 transition-transform duration-300">
+                            <!-- 畢氏定理/餘弦定理相關圖示 -->
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-600">
+                                <path d="M4 20h16"/>
+                                <path d="M4 20l8-16"/>
+                                <path d="M20 20l-8-16"/>
+                                <path d="M10 16h4"/>
+                                <path d="M12 12v4"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <!-- 內容區 -->
+                    <div class="p-6 flex flex-col flex-grow">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="inline-flex items-center rounded-md bg-purple-50 px-2.5 py-0.5 text-sm font-medium text-purple-700">
+                                定理推導
+                            </span>
+                            <span class="text-slate-400">#03</span>
+                        </div>
+                        <h2 class="text-xl font-bold text-slate-900 mb-2 group-hover:text-purple-600 transition-colors">
+                            餘弦定理 (Cosine Law)
+                        </h2>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            探索畢氏定理的延伸，透過切割三角形，視覺化證明 c² = a² + b² - 2ab cos(C) 的過程。
+                        </p>
+                        <div class="text-purple-600 font-medium text-sm flex items-center mt-auto">
+                            開啟教具 
+                            <svg class="ml-1 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- 卡片 4：未來擴充預留 -->
+            <div class="bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300 overflow-hidden h-full flex flex-col justify-center items-center text-center p-8 opacity-75 min-h-[350px]">
                 <div class="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-4">
                     <svg class="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
                 </div>
                 <h2 class="text-xl font-bold text-slate-500 mb-2">
-                    即將推出
+                    更多教材準備中
                 </h2>
                 <p class="text-slate-500 text-sm">
-                    餘弦定理 (Cosine Formula) 或其他三角學單元教材籌備中...
+                    例如：3D 空間中的三角學、解三角形練習等...
                 </p>
             </div>
 
