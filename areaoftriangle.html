@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>推導三角形面積公式</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for Math rendering */
+        .math-eq {
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+        }
+        .math-var {
+            font-style: italic;
+        }
+        .math-func {
+            font-style: normal;
+        }
+        .fraction {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: middle;
+            margin: 0 0.25em;
+            font-size: 0.85em;
+            line-height: 1.2;
+        }
+        .fraction > span:first-child {
+            border-bottom: 0.1em solid currentColor;
+            padding: 0 0.2em;
+            width: 100%;
+            text-align: center;
+        }
+        .fraction > span:last-child {
+            padding: 0 0.2em;
+        }
+        .fade-transition {
+            transition: opacity 0.2s ease-in-out;
+        }
+        /* Disable text selection on buttons */
+        .noselect {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col selection:bg-blue-200">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-slate-200 p-5">
+        <div class="container mx-auto max-w-6xl flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">幾何公式推導</h1>
+                <p class="text-slate-500 font-medium mt-1">面積 = &frac12; ab sin(C)</p>
+            </div>
+            <div class="hidden sm:block text-slate-400 bg-slate-100 p-3 rounded-lg font-mono text-sm shadow-inner">
+                互動視覺化證明
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto max-w-6xl p-4 lg:p-6 flex flex-col lg:flex-row gap-6 mt-2">
+        
+        <!-- Canvas Container -->
+        <div class="lg:w-3/5 bg-white rounded-2xl shadow-md border border-slate-200 p-2 lg:p-4 flex justify-center items-center relative overflow-hidden aspect-video lg:aspect-auto min-h-[400px]">
+            <canvas id="mathCanvas" class="max-w-full max-h-full object-contain"></canvas>
+        </div>
+
+        <!-- Explanations Container -->
+        <div class="lg:w-2/5 bg-white rounded-2xl shadow-md border border-slate-200 p-6 lg:p-8 flex flex-col relative">
+            
+            <div class="mb-5 flex justify-between items-center">
+                <span id="step-counter" class="text-xs font-bold tracking-widest text-blue-600 uppercase bg-blue-50 py-1 px-3 rounded-full border border-blue-100">第 1 步，共 7 步</span>
+            </div>
+            
+            <div class="flex-grow flex flex-col">
+                <h2 id="step-title" class="text-3xl font-bold mb-4 text-slate-900 fade-transition">問題</h2>
+                
+                <p id="step-desc" class="text-lg text-slate-600 mb-8 leading-relaxed fade-transition">
+                    我們想求出這個三角形的面積...
+                </p>
+
+                <div id="step-eq" class="math-eq text-2xl lg:text-3xl text-center mb-8 p-6 lg:p-8 bg-slate-50 rounded-xl border border-slate-200 shadow-inner min-h-[160px] flex flex-col items-center justify-center fade-transition">
+                    <!-- Equation injected via JS -->
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="mt-auto flex flex-col gap-3">
+                <div class="flex gap-3">
+                    <button id="btn-prev" class="noselect flex-1 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-semibold py-3 px-4 rounded-xl transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                        &larr; 上一步
+                    </button>
+                    <button id="btn-next" class="noselect flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition duration-200 shadow-md shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                        下一步 &rarr;
+                    </button>
+                </div>
+                <button id="btn-play" class="noselect w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold tracking-wide py-3 px-4 rounded-xl transition duration-200 border border-indigo-200">
+                    &#9654; 自動播放推導過程
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // --- 1. Derivation Data ---
+        const steps = [
+            {
+                title: "目標",
+                desc: "我們想求出這個三角形的面積，已知兩邊的長度（<span class='math-var text-blue-600 font-bold'>a</span> 和 <span class='math-var text-red-600 font-bold'>b</span>）以及它們的夾角（<span class='math-var text-purple-700 font-bold'>C</span>）。",
+                eq: "<span class='math-var'>面積</span> = ?"
+            },
+            {
+                title: "標準公式",
+                desc: "我們從任意三角形面積的基本公式開始：底乘高除以二。",
+                eq: "<span class='math-var'>面積</span> = <span class='fraction'><span>1</span><span>2</span></span> &times; <span class='math-var'>底</span> &times; <span class='math-var'>高</span>"
+            },
+            {
+                title: "確認底邊",
+                desc: "讓我們對齊三角形，並將邊 <span class='text-blue-600 font-bold math-var'>a</span> 設為三角形的底。",
+                eq: "<span class='math-var'>底</span> = <span class='text-blue-600 font-bold math-var'>a</span>"
+            },
+            {
+                title: "畫出高",
+                desc: "我們從頂點向底邊作一條垂直線。這就得到了我們的高，<span class='text-green-600 font-bold math-var'>h</span>。",
+                eq: "<span class='math-var'>高</span> = <span class='text-green-600 font-bold math-var'>h</span>"
+            },
+            {
+                title: "直角三角形",
+                desc: "注意左側形成的直角三角形。我們可以對角 <span class='text-purple-700 font-bold math-var'>C</span> 使用正弦（sine）函數。",
+                eq: "<span class='math-func'>sin</span>(<span class='math-var text-purple-700 font-bold'>C</span>) = <span class='fraction text-lg'><span>對邊</span><span>斜邊</span></span> = <span class='fraction'><span><span class='text-green-600 font-bold math-var'>h</span></span><span><span class='text-red-600 font-bold math-var'>b</span></span></span>"
+            },
+            {
+                title: "求解高",
+                desc: "將等式兩邊同乘 <span class='text-red-600 font-bold math-var'>b</span> 來重新整理等式。現在我們用已知的值表示出了高 <span class='text-green-600 font-bold math-var'>h</span>。",
+                eq: "<span class='text-green-600 font-bold math-var'>h</span> = <span class='text-red-600 font-bold math-var'>b</span> &middot; <span class='math-func'>sin</span>(<span class='math-var text-purple-700 font-bold'>C</span>)"
+            },
+            {
+                title: "最終代入",
+                desc: "將我們新得到的高 <span class='text-green-600 font-bold math-var'>h</span> 的表達式代回原來的面積公式中，即可得到最終結果。",
+                eq: "<span class='math-var'>面積</span> = <span class='fraction'><span>1</span><span>2</span></span> &times; <span class='text-blue-600 font-bold math-var'>a</span> &times; (<span class='text-red-600 font-bold math-var'>b</span> &middot; <span class='math-func'>sin</span>(<span class='math-var text-purple-700 font-bold'>C</span>))<br><br><span class='text-3xl lg:text-4xl font-bold mt-4 block text-slate-800 tracking-wide'><span class='math-var'>面積</span> = <span class='fraction' style='font-size:0.7em'><span>1</span><span>2</span></span><span class='math-var'>ab</span> <span class='math-func'>sin</span>(<span class='math-var text-purple-700'>C</span>)</span>"
+            },
+            {
+                title: "那鈍角三角形呢？",
+                desc: "如果角 <span class='math-var text-purple-700 font-bold'>C</span> 是一個大於 90 度的鈍角，這個公式還適用嗎？讓我們改變三角形的形狀來看看。",
+                eq: ""
+            },
+            {
+                title: "畫出鈍角三角形的高",
+                desc: "底邊一樣是 <span class='text-blue-600 font-bold math-var'>a</span>。但這次，從頂點放下的垂直線（高 <span class='text-green-600 font-bold math-var'>h</span>）會落在三角形的外部。我們需要延伸底邊。",
+                eq: "<span class='math-var'>高</span> = <span class='text-green-600 font-bold math-var'>h</span>"
+            },
+            {
+                title: "外部的直角三角形",
+                desc: "現在看外部這個新的直角三角形。它包含的角度是 <span class='text-purple-700 font-bold math-var'>180&deg; - C</span>（因為平角是 180 度）。",
+                eq: "<span class='math-func'>sin</span>(<span class='math-var text-purple-700 font-bold'>180&deg; - C</span>) = <span class='fraction text-lg'><span>對邊</span><span>斜邊</span></span> = <span class='fraction'><span><span class='text-green-600 font-bold math-var'>h</span></span><span><span class='text-red-600 font-bold math-var'>b</span></span></span>"
+            },
+            {
+                title: "求解高",
+                desc: "一樣將兩邊同乘 <span class='text-red-600 font-bold math-var'>b</span>，我們得到高 <span class='text-green-600 font-bold math-var'>h</span> 的表達式。",
+                eq: "<span class='text-green-600 font-bold math-var'>h</span> = <span class='text-red-600 font-bold math-var'>b</span> &middot; <span class='math-func'>sin</span>(<span class='math-var text-purple-700 font-bold'>180&deg; - C</span>)"
+            },
+            {
+                title: "三角函數恆等式",
+                desc: "根據三角函數的補角恆等式，<span class='math-func'>sin</span>(180&deg; - &theta;) 等於 <span class='math-func'>sin</span>(&theta;)。因此，<span class='math-func'>sin</span>(180&deg; - C) 就等於 <span class='math-func'>sin</span>(C)。",
+                eq: "<span class='text-green-600 font-bold math-var'>h</span> = <span class='text-red-600 font-bold math-var'>b</span> &middot; <span class='math-func'>sin</span>(<span class='math-var text-purple-700 font-bold'>C</span>)"
+            },
+            {
+                title: "最終代入 (鈍角)",
+                desc: "將高代回三角形面積公式，我們發現結果和銳角三角形<b>完全一樣</b>！公式 <span class='math-var text-lg'>&frac12;ab sin(C)</span> 對任何形狀的三角形都成立。",
+                eq: "<span class='math-var'>面積</span> = <span class='fraction'><span>1</span><span>2</span></span> &times; <span class='text-blue-600 font-bold math-var'>a</span> &times; (<span class='text-red-600 font-bold math-var'>b</span> &middot; <span class='math-func'>sin</span>(<span class='math-var text-purple-700 font-bold'>C</span>))<br><br><span class='text-3xl lg:text-4xl font-bold mt-4 block text-slate-800 tracking-wide'><span class='math-var'>面積</span> = <span class='fraction' style='font-size:0.7em'><span>1</span><span>2</span></span><span class='math-var'>ab</span> <span class='math-func'>sin</span>(<span class='math-var text-purple-700'>C</span>)</span>"
+            }
+        ];
+
+        // --- 2. Canvas & Geometry Setup ---
+        let canvas, ctx;
+        
+        // Triangle Geometry Data
+        const a_len = 400;
+        const b_len = 300;
+        
+        const logicalWidth = 800;
+        const logicalHeight = 500;
+
+        // Fixed reference points (shifted right to leave room for obtuse rotation)
+        const C_x = 350; 
+        const C_y = 380;
+        const B_x = C_x + a_len;
+        const B_y = C_y;
+
+        // --- 3. Animation State Machine ---
+        let currentStep = 0;
+        let lastTime = 0;
+        let autoplayInterval = null;
+
+        // Current rendering state (interpolated)
+        const state = {
+            baseAlpha: 0,
+            sideBAlpha: 0,
+            hLength: 0,
+            rightTriAlpha: 0,
+            angleCHighlight: 0,
+            angleC: 55 * Math.PI / 180, // Dynamic angle
+            extBaseAlpha: 0,            // Extension line for obtuse
+            extAngleHighlight: 0        // Exterior angle (180-C)
+        };
+
+        // Target rendering state based on currentStep
+        const targets = { ...state };
+
+        function updateTargets() {
+            // Reset
+            targets.baseAlpha = 0;
+            targets.sideBAlpha = 0;
+            targets.hLength = 0;
+            targets.rightTriAlpha = 0;
+            targets.angleCHighlight = 0;
+            targets.extBaseAlpha = 0;
+            targets.extAngleHighlight = 0;
+
+            // Angle state
+            if (currentStep < 7) {
+                targets.angleC = 55 * Math.PI / 180;
+            } else {
+                targets.angleC = 125 * Math.PI / 180;
+            }
+
+            switch (currentStep) {
+                case 0:
+                    break;
+                case 1:
+                case 2:
+                    targets.baseAlpha = 1;
+                    break;
+                case 3:
+                    targets.baseAlpha = 1;
+                    targets.hLength = 1;
+                    break;
+                case 4:
+                case 5:
+                    targets.baseAlpha = 0.25; 
+                    targets.hLength = 1;
+                    targets.rightTriAlpha = 1;
+                    targets.sideBAlpha = 1;
+                    targets.angleCHighlight = 1;
+                    break;
+                case 6:
+                    targets.baseAlpha = 1;
+                    targets.sideBAlpha = 1;
+                    targets.hLength = 1;
+                    targets.angleCHighlight = 1;
+                    targets.rightTriAlpha = 0;
+                    break;
+                // Obtuse cases
+                case 7:
+                    targets.baseAlpha = 1;
+                    break;
+                case 8:
+                    targets.baseAlpha = 1;
+                    targets.extBaseAlpha = 1;
+                    targets.hLength = 1;
+                    break;
+                case 9:
+                case 10:
+                case 11:
+                    targets.baseAlpha = 0.25;
+                    targets.extBaseAlpha = 1;
+                    targets.hLength = 1;
+                    targets.rightTriAlpha = 1;
+                    targets.sideBAlpha = 1;
+                    targets.extAngleHighlight = 1;
+                    break;
+                case 12:
+                    targets.baseAlpha = 1;
+                    targets.sideBAlpha = 1;
+                    targets.hLength = 1;
+                    targets.extBaseAlpha = 1;
+                    targets.angleCHighlight = 1;
+                    targets.extAngleHighlight = 0;
+                    targets.rightTriAlpha = 0;
+                    break;
+            }
+        }
+
+        // --- 4. Main Drawing Logic ---
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Dynamically calculate A and H based on animated angleC
+            const A_x = C_x + b_len * Math.cos(state.angleC);
+            const A_y = C_y - b_len * Math.sin(state.angleC);
+            const H_x = A_x;
+            const H_y = C_y;
+            
+            // 4.1 Right triangle highlight fill
+            if (state.rightTriAlpha > 0) {
+                ctx.fillStyle = `rgba(59, 130, 246, ${state.rightTriAlpha * 0.12})`; // very soft blue
+                ctx.beginPath();
+                ctx.moveTo(C_x, C_y);
+                ctx.lineTo(A_x, A_y);
+                ctx.lineTo(H_x, H_y);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // 4.1.5 Base Extension Line (for obtuse)
+            if (state.extBaseAlpha > 0) {
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = `rgba(148, 163, 184, ${state.extBaseAlpha})`; // slate-400
+                ctx.setLineDash([6, 6]);
+                ctx.beginPath();
+                ctx.moveTo(C_x, C_y);
+                ctx.lineTo(H_x - 30, C_y); // extend a bit past H
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // 4.2 Base Highlights
+            if (state.baseAlpha > 0) {
+                ctx.lineWidth = 6 + (state.baseAlpha * 2);
+                ctx.strokeStyle = `rgba(37, 99, 235, ${state.baseAlpha})`; // blue-600
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(C_x, C_y);
+                ctx.lineTo(B_x, B_y);
+                ctx.stroke();
+            }
+
+            // 4.3 Side b Highlights
+            if (state.sideBAlpha > 0) {
+                ctx.lineWidth = 6 + (state.sideBAlpha * 2);
+                ctx.strokeStyle = `rgba(220, 38, 38, ${state.sideBAlpha})`; // red-600
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(C_x, C_y);
+                ctx.lineTo(A_x, A_y);
+                ctx.stroke();
+            }
+
+            // 4.4 Main Triangle Outline (Base Layer)
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#334155'; // slate-700
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(C_x, C_y);
+            ctx.lineTo(B_x, B_y);
+            ctx.lineTo(A_x, A_y);
+            ctx.closePath();
+            ctx.stroke();
+
+            // 4.5 Height Line (h)
+            if (state.hLength > 0) {
+                const currentHy = A_y + (H_y - A_y) * state.hLength;
+                
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#16a34a'; // green-600
+                ctx.setLineDash([8, 8]);
+                ctx.beginPath();
+                ctx.moveTo(A_x, A_y);
+                ctx.lineTo(H_x, currentHy);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                // Right Angle Square Marker
+                if (state.hLength > 0.9) {
+                    let markerAlpha = (state.hLength - 0.9) * 10;
+                    ctx.strokeStyle = `rgba(22, 163, 74, ${markerAlpha})`;
+                    ctx.lineWidth = 2;
+                    let sign = (C_x < H_x) ? -1 : 1; // -1 if H is right of C (acute), 1 if left (obtuse)
+                    ctx.beginPath();
+                    ctx.moveTo(H_x, H_y - 20);
+                    ctx.lineTo(H_x + 20 * sign, H_y - 20);
+                    ctx.lineTo(H_x + 20 * sign, H_y);
+                    ctx.stroke();
+                }
+            }
+
+            // 4.6 Angle C Arc (Interior)
+            const r = 148 - (148 - 126) * state.angleCHighlight; 
+            const g = 163 - (163 - 34) * state.angleCHighlight;  
+            const b = 184 - (184 - 206) * state.angleCHighlight; 
+            
+            ctx.lineWidth = 3 + state.angleCHighlight * 1.5;
+            ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
+            ctx.beginPath();
+            ctx.arc(C_x, C_y, 45 + state.angleCHighlight * 5, 0, -state.angleC, true);
+            ctx.stroke();
+
+            if (state.angleCHighlight > 0) {
+                ctx.fillStyle = `rgba(126, 34, 206, ${state.angleCHighlight * 0.15})`;
+                ctx.beginPath();
+                ctx.moveTo(C_x, C_y);
+                ctx.arc(C_x, C_y, 45 + state.angleCHighlight * 5, 0, -state.angleC, true);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // 4.6.5 Exterior Angle Arc (180-C)
+            if (state.extAngleHighlight > 0) {
+                ctx.lineWidth = 3 + state.extAngleHighlight * 1.5;
+                ctx.strokeStyle = `rgba(217, 119, 6, ${state.extAngleHighlight})`; // amber-600
+                ctx.beginPath();
+                ctx.arc(C_x, C_y, 40 + state.extAngleHighlight * 5, -Math.PI, -state.angleC, false);
+                ctx.stroke();
+
+                ctx.fillStyle = `rgba(217, 119, 6, ${state.extAngleHighlight * 0.15})`;
+                ctx.beginPath();
+                ctx.moveTo(C_x, C_y);
+                ctx.arc(C_x, C_y, 40 + state.extAngleHighlight * 5, -Math.PI, -state.angleC, false);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Label 180-C
+                ctx.fillStyle = `rgba(217, 119, 6, ${state.extAngleHighlight})`;
+                ctx.font = 'italic 18px "Cambria Math", "Times New Roman", serif';
+                ctx.fillText('180°-C', C_x - 85, C_y - 20);
+            }
+
+            // 4.7 Text Labels
+            ctx.font = 'italic 26px "Cambria Math", "Times New Roman", serif';
+            
+            // Label C
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            ctx.fillText('C', C_x - 10, C_y + 35); // Moved down slightly to avoid lines
+
+            // Labels A, B
+            ctx.fillStyle = '#64748b'; // slate-500
+            ctx.fillText('A', A_x - 15, A_y - 15);
+            ctx.fillText('B', B_x + 10, B_y + 25);
+
+            // Label a (Base)
+            if (state.baseAlpha > 0.5) ctx.fillStyle = '#2563eb'; // blue-600
+            else ctx.fillStyle = '#1e293b'; // slate-800
+            ctx.fillText('a', C_x + a_len / 2 - 10, C_y + 35);
+
+            // Label b (Hypotenuse of inner tri)
+            ctx.save();
+            if (state.sideBAlpha > 0.5) ctx.fillStyle = '#dc2626'; // red-600
+            else ctx.fillStyle = '#1e293b';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // 計算垂直於邊 b 的法向量，將標籤往外推
+            const dirX = (A_x - C_x) / b_len;
+            const dirY = (A_y - C_y) / b_len;
+            const offsetX = dirY * 30; // 距離線段 30 像素
+            const offsetY = -dirX * 30;
+            
+            ctx.fillText('b', C_x + (A_x - C_x) / 2 + offsetX, C_y + (A_y - C_y) / 2 + offsetY);
+            ctx.restore();
+
+            // Label h (Height)
+            if (state.hLength > 0.3) {
+                let hAlpha = Math.max(0, (state.hLength - 0.3) / 0.7);
+                ctx.fillStyle = `rgba(22, 163, 74, ${hAlpha})`; // green-600
+                let sign = (C_x < H_x) ? -1 : 1; 
+                ctx.fillText('h', H_x + (sign === 1 ? -25 : 15), A_y + (H_y - A_y) / 2 + 10);
+            }
+        }
+
+        // --- 5. Application Logic ---
+        function animate(currentTime) {
+            if (!lastTime) lastTime = currentTime;
+            const dt = currentTime - lastTime;
+            lastTime = currentTime;
+            
+            // Spring-like interpolation towards targets
+            const speed = 0.006 * dt; 
+            for (let key in state) {
+                state[key] += (targets[key] - state[key]) * Math.min(speed, 1);
+                if (Math.abs(targets[key] - state[key]) < 0.001) {
+                    state[key] = targets[key];
+                }
+            }
+            
+            draw();
+            requestAnimationFrame(animate);
+        }
+
+        function setStep(newStep) {
+            currentStep = newStep;
+            updateTargets();
+            
+            // UI References
+            const titleDiv = document.getElementById('step-title');
+            const descDiv = document.getElementById('step-desc');
+            const eqDiv = document.getElementById('step-eq');
+            
+            // Fade out
+            titleDiv.style.opacity = 0;
+            descDiv.style.opacity = 0;
+            eqDiv.style.opacity = 0;
+            
+            // Update content and fade in after a brief delay
+            setTimeout(() => {
+                const stepData = steps[currentStep];
+                titleDiv.innerHTML = stepData.title;
+                descDiv.innerHTML = stepData.desc;
+                eqDiv.innerHTML = `<div class="w-full leading-relaxed">${stepData.eq}</div>`;
+                
+                document.getElementById('step-counter').innerText = `第 ${currentStep + 1} 步，共 ${steps.length} 步`;
+                
+                document.getElementById('btn-prev').disabled = currentStep === 0;
+                document.getElementById('btn-next').disabled = currentStep === steps.length - 1;
+                
+                titleDiv.style.opacity = 1;
+                descDiv.style.opacity = 1;
+                eqDiv.style.opacity = 1;
+            }, 200);
+        }
+
+        function toggleAutoplay() {
+            const btnPlay = document.getElementById('btn-play');
+            
+            if (autoplayInterval) {
+                clearInterval(autoplayInterval);
+                autoplayInterval = null;
+                btnPlay.innerHTML = "&#9654; 自動播放推導過程";
+                btnPlay.classList.remove('bg-indigo-600', 'text-white', 'shadow-md', 'shadow-indigo-500/30');
+                btnPlay.classList.add('bg-indigo-50', 'text-indigo-700');
+            } else {
+                if (currentStep === steps.length - 1) setStep(0);
+                
+                btnPlay.innerHTML = "&#10074;&#10074; 暫停推導過程";
+                btnPlay.classList.add('bg-indigo-600', 'text-white', 'shadow-md', 'shadow-indigo-500/30');
+                btnPlay.classList.remove('bg-indigo-50', 'text-indigo-700');
+                
+                autoplayInterval = setInterval(() => {
+                    if (currentStep < steps.length - 1) {
+                        setStep(currentStep + 1);
+                    } else {
+                        toggleAutoplay(); // Turn off when finished
+                    }
+                }, 4000); // 4 seconds per step
+            }
+        }
+
+        // --- 6. Initialization ---
+        document.addEventListener("DOMContentLoaded", () => {
+            canvas = document.getElementById('mathCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // High-DPI screen support for crisp rendering
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = logicalWidth * dpr;
+            canvas.height = logicalHeight * dpr;
+            ctx.scale(dpr, dpr);
+            
+            // Bind Buttons
+            document.getElementById('btn-prev').addEventListener('click', () => {
+                if (currentStep > 0) {
+                    if(autoplayInterval) toggleAutoplay(); // pause if interacting
+                    setStep(currentStep - 1);
+                }
+            });
+            
+            document.getElementById('btn-next').addEventListener('click', () => {
+                if (currentStep < steps.length - 1) {
+                    if(autoplayInterval) toggleAutoplay();
+                    setStep(currentStep + 1);
+                }
+            });
+            
+            document.getElementById('btn-play').addEventListener('click', toggleAutoplay);
+            
+            // Start
+            setStep(0);
+            requestAnimationFrame(animate);
+        });
+    </script>
+</body>
+</html>
